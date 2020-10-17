@@ -1,0 +1,37 @@
+<main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-md-4">
+    <div class="col-md-8 order-md-1">
+        <h2 style="margin-top: 17px; margin-bottom: 17px;">Agent Regist</h2>
+      <form class="form-signin" action="/agent" method="post">
+        <div class="mb-3">
+          <label for="name">Agent Name</label>
+          <input type="name" name="name" class="form-control" id="name" placeholder="Agent Name" required>
+          <div class="invalid-feedback">
+            Please enter an agent name address for shipping updates.
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="username">Descrytion</label>
+          <div class="input-group">
+            <input type="text" name="descrytion" class="form-control" id="descrytion" placeholder="Descrytion">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="os">OS</label>
+          <input type="os" name="os" class="form-control" id="os" placeholder="OS" required>
+          <div class="invalid-feedback">
+            Please enter what kind of OS.
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="version">OS Version</label>
+          <input type="version" name="version" class="form-control" id="version" placeholder="OS version"
+            required>
+          <div class="invalid-feedback">
+            Please enter what kind of OS version.
+          </div>
+        </div>
+        <button class="btn btn-primary" type="submit">Save</button>
+        <a href="/agent/main" class="btn btn-danger" role="button" >Cancel</a>
+      </form>
+    </div>
+  </main>
