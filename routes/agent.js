@@ -79,7 +79,7 @@ router.post('/', function(req, res, next) {
     console.log('hash secret', hashSecret);
     try {
         const token = jwt.generateToken("HS512", body.name, uuid.toString(), hashSecret)
-        let params = [uuid.toString(), body.name, body.descrytion, body.os, body.version, token]
+        let params = [uuid.toString(), body.name, body.description, body.os, body.version, token]
         db.query(agentSql.insertAgent(),params).then(result => {
             console.log(result);
             res.redirect("/agent/main");
@@ -98,7 +98,7 @@ router.put('/', function(req, res, next) {
     try {
         db.query(agentSql.updatetAgent(),params).then(result => {
             console.log(result);
-            let params = [body.name, body.descrytion, body.os, body.version]
+            let params = [body.name, body.description, body.os, body.version]
             db.query(agentSql.updatetAgent(result[0].uuid.toString()),params).then(result2 => {
                 console.log(result2);
                 res.redirect("/agent/main");
@@ -134,12 +134,12 @@ router.post('/cron/start', function(req, res, next) {
 });
 
 
-router.post('/v1/resource/receive', function(req, res, next) {
+router.post('/v1/windows/resource/receive', function(req, res, next) {
   console.log("########request#####",req.headers);
   console.log("########request#####",req.query);
   console.log("########request#####",req.body);
   let body = req.body
-  let resourceData = calculateResource(body)
+  let resourceData = calculateResource(body, "windows")
   let token = req.headers.authorization.split(" ")
   token = token[1]
   db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
@@ -161,15 +161,56 @@ router.post('/v1/resource/receive', function(req, res, next) {
   res.json({"code":'200', "status":"success"});
 });
 
-function calculateResource (data) {
-    let cpu = data.cpu[0].Average
-    let mem = Math.round(100 * (Number(data.mem[0].FreePhysicalMemory)/Number(data.mem[0].TotalPhysicalMemory)))
-    let disk = Math.round(100 * (Number(data.disk[0].FreeSpace)/Number(data.disk[0].Size)))
+router.post('/v1/linux/resource/receive', function(req, res, next) {
+    let body = req.body
+    let resourceData = calculateResource(body, "linux")
+    let token = req.headers.authorization.split(" ")
+    token = token[1]
+    db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
+      let hashSecret = crypto.createHash("sha512").update(result[0].id.toString()).digest("hex");
+      let tokenCheck = jwt.veryfyToekn(token,hashSecret)
+      console.log(tokenCheck);
+      // insert resource data in DB
+      const uuid = Uuid.random();
+      db.query(resourceSql.insertResource(),[uuid,result[0].id, resourceData.cpu, resourceData.mem, resourceData.disk]).then(result2 => {
+          console.log(result2);
+      })
+      .catch(err => {
+          console.log(err)  
+      })
+    })
+    .catch(err => {
+        console.log(err)  
+    })
+    res.json({"code":'200', "status":"success"});
+});
 
+
+function calculateResource (data, os) {
+    let cpu = ""
+    let mem = ""
+    let disk = ""
     let result = {}
-    result.cpu = cpu
-    result.mem = mem.toString()
-    result.disk = disk.toString()
-    return result 
+    if(os === "windows") {
+        cpu = data.cpu[0].Average
+        mem = Math.round(100 * (Number(data.mem[0].FreePhysicalMemory)/Number(data.mem[0].TotalPhysicalMemory)))
+        disk = Math.round(100 * (Number(data.disk[0].FreeSpace)/Number(data.disk[0].Size)))
+
+        result.cpu = cpu
+        result.mem = mem.toString()
+        result.disk = disk.toString()
+        return result 
+    } else if (os ==="linux") {
+        cpu = data.cpu[0].replace(/\n/g,'');
+        mem = Math.round(100 * ((Number(data.mem.total)-Number(data.mem.free)-Number(data.mem["buff/cache"]))/Number(data.mem.total)))
+        //let rootDisk = data.disk.filter(it => new RegExp('root', "i").test(it.Mounted))
+        //console.log('####root',rootDisk);
+        disk = Math.round(100 * (Number(data.disk[4].Used)/Number(data.disk[4]['1K-blocks'])))
+        result.cpu = cpu
+        result.mem = mem.toString()
+        result.disk = disk.toString()
+        return result
+    } 
+    
 }
 module.exports = router;
