@@ -9,10 +9,10 @@
         <table class="table table-striped table-sm">
             <thead>
                 <tr class="d-flex">
-                    <th class="col-3">Name</th>
+                    <th class="col-2">Name</th>
                     <th class="col-3">Description</th>
                     <th class="col-1">OS</th>
-                    <th class="col-1">Status</th>
+                    <th class="col-2">Status</th>
                     <th class="col-2">Create Time</th>
                     <th class="col-2">Update Time</th>
                 </tr>
@@ -21,10 +21,10 @@
             <% const date = new Date() %>
             <% for(let i=0; i<rows.length; i++) { %>
                 <tr class="d-flex">
-                    <td class="col-sm-3"><a href="/agent?name=<%=rows[i].name%>"><%=rows[i].name%></a></td>
+                    <td class="col-sm-2"><a href="/agent?name=<%=rows[i].name%>"><%=rows[i].name%></a></td>
                     <td class="col-sm-3"><%=rows[i].description%></td>
                     <td class="col-sm-1"><%=rows[i].os%></td>
-                    <td class="col-sm-1"></td>
+                    <td class="col-sm-2"><%=rows[i].status%></td>
                     <td class="col-sm-2"><%=rows[i].create_at%></td>
                     <td class="col-sm-2"><%=rows[i].update_at%></td>
                 </tr>

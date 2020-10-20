@@ -1,7 +1,7 @@
 var sql = () => {
 };
 
-sql.getResourceist = () => {
+sql.getResourceList = () => {
     let stringQuery = "SELECT * ";
     stringQuery += " FROM monitoring.resource";
     stringQuery += " ";

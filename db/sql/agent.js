@@ -1,8 +1,8 @@
 var sql = () => {
 };
 
-sql.getAgentist = () => {
-    let stringQuery = "SELECT name, description, os, version, TODATE(create_at) as create_at, update_at ";
+sql.getAgentList = () => {
+    let stringQuery = "SELECT name, description, os, version, status, TODATE(create_at) as create_at, TODATE(update_at) as update_at ";
     stringQuery += " FROM monitoring.agent";
     return stringQuery
 };
@@ -16,22 +16,22 @@ sql.getSingleAgent= () => {
 
 sql.insertAgent= () => {
     let stringQuery = "INSERT INTO monitoring.agent "
-    stringQuery += "(id,name,description,os,version,jwt,create_at) ";
-    stringQuery += "VALUES (?,?,?,?,?,?,toTimestamp(now()))";
+    stringQuery += "(id,name,description,os,version,status,jwt,create_at) ";
+    stringQuery += "VALUES (?,?,?,?,?,?,?,toTimestamp(now()))";
     return stringQuery
 }
 
 sql.updatetAgent= (id) => {
     let stringQuery = "UPDATE monitoring.agent ";
     stringQuery += "SET "
-    stringQuery += "name=?, description=?, os=?, version=?, jwt=?, update_at=toTimestamp(now()) ";
+    stringQuery += "description=?, os=?, version=?, jwt=?, update_at=toTimestamp(now()) ";
     stringQuery += "WHERE id ="+id;
     return stringQuery
 }
 
-sql.deleteAgent= (id) => {
-    let stringQuery = "DLETE FROM monitoring.agent ";
-    stringQuery += "WHERE id ="+id;
+sql.deleteAgent= () => {
+    let stringQuery = "DELETE FROM monitoring.agent ";
+    stringQuery += "WHERE id =?";
     return stringQuery
 }
 

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const resourceSql = require('../db/sql/resource')
+const agentSql = require('../db/sql/agent')
 const db = require('../db/db');
 const { log } = require('debug');
 
@@ -10,24 +10,27 @@ router.get('/', function(req, res, next) {
 });
 
 router.get('/main', function(req, res, next) {
-  db.query(resourceSql.getResourceist(),[10]).then(result => {
+  db.query(agentSql.getAgentList(),[]).then(result => {
     let context = {}
     context.url = 'dashboard'
-    let saved_at = []
-    let cpu = []
-    let mem = []
-    let disk = []
+    let windows = []
+    let linux = []
+    let etc = []
     for (let i=0; i < result.length; i++) {
-      saved_at.push(result[i].saved_at)
-      cpu.push(result[i].cpu)
-      mem.push(result[i].memory)
-      disk.push(result[i].disk)
+      if(result[i].os === "windows" || result[i].os ==="Windows") {
+        windows.push(result[i].status)
+      } else if (result[i].os === "linux" || result[i].os ==="Linux") {
+        linux.push(result[i].status)
+      } else {
+        etc.push(result[i].status)
+      }
     }
+
     context.data = {}
-    context.data.saved_at = saved_at
-    context.data.cpu = cpu
-    context.data.mem = mem
-    context.data.disk = disk
+    context.data.windows = windows
+    context.data.linux = linux
+    context.data.etc = etc
+    console.log(context);
     res.render('main',context);
   })
   .catch(err => {

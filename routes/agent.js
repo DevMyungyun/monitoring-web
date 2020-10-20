@@ -12,8 +12,8 @@ const { param } = require('.');
 const Uuid = cassandra.types.Uuid;
 
 router.get('/main', function(req, res, next) {
-    db.query(agentSql.getAgentist(),[]).then(result => {
-        console.log("list###", result);
+    db.query(agentSql.getAgentList(),[]).then(result => {
+        // console.log("list###", result);
         let data = {}
         data.url= 'agent-main'
         data.rows=result
@@ -32,7 +32,7 @@ res.render('main',{url : 'agent-register'});
 router.get('/', function(req, res, next) {
     let params = req.query
     db.query(agentSql.getSingleAgent(),[params.name]).then(result => {
-        console.log("list###", result);
+        // console.log("list###", result);
         let context = {}
         context.url= 'agent-detail'
         context.rows= {}
@@ -40,6 +40,7 @@ router.get('/', function(req, res, next) {
         context.rows.description=result[0].description
         context.rows.os=result[0].os
         context.rows.version=result[0].version
+        context.rows.status=result[0].status
         context.rows.create_at=result[0].create_at
         context.rows.update_at=result[0].update_at
          
@@ -72,6 +73,7 @@ router.get('/', function(req, res, next) {
         res.render('error',{message:"agent main error", error:{status:"Error while page is loaded"}});
     })
 });
+
 router.post('/', function(req, res, next) {
     const body = req.body
     const uuid = Uuid.random();
@@ -79,7 +81,7 @@ router.post('/', function(req, res, next) {
     console.log('hash secret', hashSecret);
     try {
         const token = jwt.generateToken("HS512", body.name, uuid.toString(), hashSecret)
-        let params = [uuid.toString(), body.name, body.description, body.os, body.version, token]
+        let params = [uuid.toString(), body.name, body.description, body.os, body.version, "beforeHandshake" ,token]
         db.query(agentSql.insertAgent(),params).then(result => {
             console.log(result);
             res.redirect("/agent/main");
@@ -94,17 +96,18 @@ router.post('/', function(req, res, next) {
 
 router.put('/', function(req, res, next) {
     let body = req.body
-    console.log(req.body);
+    console.log(">>>>>",req.body);
+    let params = [body.description, body.os, body.version]
     try {
-        db.query(agentSql.updatetAgent(),params).then(result => {
+        db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
             console.log(result);
             let params = [body.name, body.description, body.os, body.version]
-            db.query(agentSql.updatetAgent(result[0].uuid.toString()),params).then(result2 => {
-                console.log(result2);
-                res.redirect("/agent/main");
+            db.query(agentSql.updatetAgent(result[0].id.toString()),params).then(result2 => {
+                res.json({"code":'200', "status":"success", "description":"Successfully update"});
             })
             .catch(err => {
                 console.log(err)  
+                res.json({"code":'500', "status":"Server Error", "description":"Fail to update"});  
             })
         })
         .catch(err => {
@@ -117,7 +120,20 @@ router.put('/', function(req, res, next) {
 
 router.delete('/', function(req, res, next) {
     console.log(req.query);
-    res.redirect("/agent/main");
+    db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
+        db.query(agentSql.deleteAgent(),[result[0].id.toString()]).then(result2 => {
+            res.json({"code":'200', "status":"success", "description":"Successfully delete"});
+        })
+        .catch(err => {
+            console.log(err)
+            res.json({"code":'500', "status":"Server Error", "description":"Fail to delete"});  
+        })
+    })
+    .catch(err => {
+        console.log(err)
+        res.json({"code":'500', "status":"Server Error", "description":"Unexpected error"});    
+    })
+    
 });
 
 router.post('/cron/start', function(req, res, next) {

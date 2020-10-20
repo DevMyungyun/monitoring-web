@@ -16,8 +16,15 @@
     <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
 
     <div class="col-md-8 order-md-1">
-      <form class="form-signin" action="/agent" method="put">
+      <!-- <form class="form-signin" action="/agent" method="POST">
+        <input type="hidden" name="_method" value="put" /> -->
         <input type="hidden" name="name" class="form-control" id="name" value="<%=rows.name %>">
+        <div class="mb-3">
+          <label for="status">Status</label>
+          <div class="input-group">
+            <input type="text" name="status" class="form-control" id="status" value="<%=rows.status %>">
+          </div>
+        </div>
         <div class="mb-3">
           <label for="description">Description</label>
           <div class="input-group">
@@ -39,7 +46,7 @@
             Please enter what kind of OS version.
           </div>
         </div>
-        <button class="btn btn-primary" type="submit">Update</button>
+        <button class="btn btn-primary" id="update" type="button" onclick="updateBtn();" >Update</button>
         <button class="btn btn-danger" id="delete" type="button" onclick="deleteBtn();" >Delete</button>
       </form>
     </div>
@@ -130,18 +137,59 @@ function deleteBtn() {
         } catch (e) {
             console.log(e);
         }
-        xhr.onprogress = function () {
-            console.log('LOADING: ', xhr.status);
-        };
-        xhr.onload = function () {
-            console.log('DONE: ', xhr.status);
-        };
+        // xhr.onprogress = function () {
+        //     console.log('LOADING: ', xhr.status);
+        // };
+        // xhr.onload = function () {
+        //     console.log('DONE: ', xhr.status);
+        // };
         xhr.onreadystatechange = function (e) {
-            if (xhr.status === 200 || xhr.status == 201) {
+          const res = JSON.parse(xhr.response)
+            if (res.code === "200" || res.code == "201") {
                 alert('Successfully delete the agent')
-            } else if (xhr.status == 0) {
-                result = 'CORS error or some the other error in connecting to the server...'
-                alert(result);
+                window.location.href = '/agent/main';
+            } else {
+                alert("Unexpected error");
+            }
+        }
+    } else {
+        console.log('Cancel delete this agent.');
+    }   
+}
+
+function updateBtn() {
+
+    if(confirm("Are you sure of update this agent?")){
+        var xhr;
+        if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
+            xhr = new XMLHttpRequest();
+        } else { // code for IE6, IE5
+            xhr = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+        xhr.open('put', '/agent?name='+<%= rows.name %>, true);
+        xhr.setRequestHeader("Content-Type", "application/json")
+        let body = {}
+        body.description = document.getElementById('description').value
+        body.os = document.getElementById('os').value
+        body.version = document.getElementById('version').value
+
+        var jsonBody = JSON.stringify(body)
+        try {
+            xhr.send(jsonBody);
+        } catch (e) {
+            console.log(e);
+        }
+        // xhr.onprogress = function () {
+        //     console.log('LOADING: ', xhr.status);
+        // };
+        // xhr.onload = function () {
+        //     console.log('DONE: ', xhr.status);
+        // };
+        xhr.onreadystatechange = function (e) {
+          const res = JSON.parse(xhr.response)
+            if (res.code === "200" || res.code == "201") {
+                alert('Successfully update the agent')
+                window.location.href = '/agent/main';
             } else {
                 alert("Unexpected error");
             }
@@ -149,6 +197,5 @@ function deleteBtn() {
     } else {
         console.log('Cancel delete this agent.');
     }
-    
 }
 </script>
