@@ -6,9 +6,9 @@ const agentSql = require('../db/sql/agent')
 const resourceSql = require('../db/sql/resource')
 const jwt = require('../auth/jwt')
 const crypto = require('crypto');
+const os = require( 'os' );
+const conifg = require( '../config' )
 const cassandra = require('cassandra-driver');
-const { token } = require('morgan');
-const { param } = require('.');
 const Uuid = cassandra.types.Uuid;
 
 router.get('/main', function(req, res, next) {
@@ -26,7 +26,7 @@ router.get('/main', function(req, res, next) {
 });
 
 router.get('/register', function(req, res, next) {
-res.render('main',{url : 'agent-register'});
+    res.render('main',{url : 'agent-register'});
 });
 
 router.get('/', function(req, res, next) {
@@ -41,6 +41,7 @@ router.get('/', function(req, res, next) {
         context.rows.os=result[0].os
         context.rows.version=result[0].version
         context.rows.status=result[0].status
+        context.rows.address=result[0].address
         context.rows.create_at=result[0].create_at
         context.rows.update_at=result[0].update_at
          
@@ -81,7 +82,7 @@ router.post('/', function(req, res, next) {
     console.log('hash secret', hashSecret);
     try {
         const token = jwt.generateToken("HS512", body.name, uuid.toString(), hashSecret)
-        let params = [uuid.toString(), body.name, body.description, body.os, body.version, "beforeHandshake" ,token]
+        let params = [uuid.toString(), body.name, body.description, body.os, body.version, "beforeHandshake", body.address, token]
         db.query(agentSql.insertAgent(),params).then(result => {
             console.log(result);
             res.redirect("/agent/main");
@@ -97,11 +98,10 @@ router.post('/', function(req, res, next) {
 router.put('/', function(req, res, next) {
     let body = req.body
     console.log(">>>>>",req.body);
-    let params = [body.description, body.os, body.version]
     try {
         db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
             console.log(result);
-            let params = [body.name, body.description, body.os, body.version]
+            let params = [body.description, body.os, body.version, body.address]
             db.query(agentSql.updatetAgent(result[0].id.toString()),params).then(result2 => {
                 res.json({"code":'200', "status":"success", "description":"Successfully update"});
             })
@@ -136,19 +136,73 @@ router.delete('/', function(req, res, next) {
     
 });
 
-router.post('/cron/start', function(req, res, next) {
-    console.log(req.body);
-    const agentUrl = req.body.url
-    let reqBody = {}
-    axios.post(agentUrl, {
-        title,
-        completed
-      })
-      .then(res => this.todos = [...this.todos, res.data])
-      .catch(err => console.log(err))
-    res.json({"code":'200', "status":"success"});
+router.get('/handshake', function(req, res, next) {
+    var networkInterfaces = os.networkInterfaces();
+    db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
+        const headers = {
+            'Authorization': 'bearer '+result[0].jwt,
+            'Content-type': 'application/json'
+        }
+        let body = {}
+        body.ID = result[0].id.toString()
+        body.NAME = result[0].name
+        body.JWT = result[0].jwt
+        body.MAIN_SERVER_ADDRESS = 'http://'+networkInterfaces["Wi-Fi"][1].address+':'+conifg.webport
+        axios.defaults.headers.post = null
+        axios.post(result[0].address+'/handshake', body, {headers})
+        .then(response => { 
+            console.log('response from '+result[0].name+' agent', response.data)
+            db.query(agentSql.updatetAgentStatus(result[0].id.toString()),['stop'])
+            .then(result => {
+                res.json({"code":'200', "status":"Success", "description":"Successfully Handshake"});    
+            })
+            .catch(err => {
+                console.log(err)
+            })
+        })
+        .catch(err => {
+            console.log(err)    
+            res.json({"code":'500', "status":"Server Error", "description":"Fail to handshake"});
+        })
+    })
+    .catch(err => {
+        console.log(err)
+        res.json({"code":'500', "status":"Server Error", "description":"Unexpected error"});    
+    })
 });
 
+router.post('/cron/start', function(req, res, next) {
+    db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
+        const headers = {
+            'Authorization': 'bearer '+result[0].jwt,
+            'Content-type': 'application/json'
+        }
+        axios.defaults.headers.post = null
+        axios.post(result[0].address+'/v1/cron/start', null, {headers})
+        .then(response => { 
+            console.log('response from '+result[0].name+' agent', response.data)
+            db.query(agentSql.updatetAgentStatus(result[0].id.toString()),['running'])
+            .then(result => {
+                res.json({"code":'200', "status":"Success", "description":"Successfully Handshake"});    
+            })
+            .catch(err => {
+                console.log(err)
+            })
+        })
+        .catch(err => {
+            console.log(err)    
+            res.json({"code":'500', "status":"Server Error", "description":"Fail to handshake"});
+        })
+    })
+    .catch(err => {
+        console.log(err)
+        res.json({"code":'500', "status":"Server Error", "description":"Unexpected error"});    
+    })
+});
+
+router.get('/cron/stop', function(req, res, next) {
+    res.render('main',{url : 'agent-register'});
+});
 
 router.post('/v1/windows/resource/receive', function(req, res, next) {
   console.log("########request#####",req.headers);

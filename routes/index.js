@@ -30,7 +30,7 @@ router.get('/main', function(req, res, next) {
     context.data.windows = windows
     context.data.linux = linux
     context.data.etc = etc
-    console.log(context);
+    // console.log(context);
     res.render('main',context);
   })
   .catch(err => {

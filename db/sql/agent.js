@@ -16,15 +16,23 @@ sql.getSingleAgent= () => {
 
 sql.insertAgent= () => {
     let stringQuery = "INSERT INTO monitoring.agent "
-    stringQuery += "(id,name,description,os,version,status,jwt,create_at) ";
-    stringQuery += "VALUES (?,?,?,?,?,?,?,toTimestamp(now()))";
+    stringQuery += "(id,name,description,os,version,status,address,jwt,create_at) ";
+    stringQuery += "VALUES (?,?,?,?,?,?,?,?,toTimestamp(now()))";
     return stringQuery
 }
 
 sql.updatetAgent= (id) => {
     let stringQuery = "UPDATE monitoring.agent ";
     stringQuery += "SET "
-    stringQuery += "description=?, os=?, version=?, jwt=?, update_at=toTimestamp(now()) ";
+    stringQuery += "description=?, os=?, version=?, address=?, update_at=toTimestamp(now()) ";
+    stringQuery += "WHERE id ="+id;
+    return stringQuery
+}
+
+sql.updatetAgentStatus= (id) => {
+    let stringQuery = "UPDATE monitoring.agent ";
+    stringQuery += "SET "
+    stringQuery += "status=?, update_at=toTimestamp(now()) ";
     stringQuery += "WHERE id ="+id;
     return stringQuery
 }
