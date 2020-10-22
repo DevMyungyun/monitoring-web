@@ -13,9 +13,15 @@ const Uuid = cassandra.types.Uuid;
 
 router.get('/main', function(req, res, next) {
     db.query(agentSql.getAgentList(),[]).then(result => {
-        // console.log("list###", result);
         let data = {}
         data.url= 'agent-main'
+        result.forEach(el => {
+            el.create_at = getDateFormat(el.create_at)
+            if(el.update_at) {
+                el.update_at = getDateFormat(el.update_at)
+            }
+        });
+        // console.log("list###", result);                   
         data.rows=result
         res.render('main',data);
     })
@@ -42,9 +48,8 @@ router.get('/', function(req, res, next) {
         context.rows.version=result[0].version
         context.rows.status=result[0].status
         context.rows.address=result[0].address
-        context.rows.create_at=result[0].create_at
-        context.rows.update_at=result[0].update_at
-         
+        context.rows.create_at=getDateFormat(result[0].create_at)
+        context.rows.update_at=getDateFormat(result[0].update_at)
         let dataLength = (params.length) ? params.length : 10
         db.query(resourceSql.getSingleResource(),[result[0].id.toString(),dataLength]).then(result2 => {
             let saved_at = []
@@ -52,7 +57,7 @@ router.get('/', function(req, res, next) {
             let mem = []
             let disk = []
             for (let i=0; i < result2.length; i++) {
-            saved_at.push(result2[i].saved_at)
+            saved_at.push(getDateFormat(result2[i].saved_at))
             cpu.push(result2[i].cpu)
             mem.push(result2[i].memory)
             disk.push(result2[i].disk)
@@ -136,6 +141,37 @@ router.delete('/', function(req, res, next) {
     
 });
 
+router.get('/healthcheck', function(req, res, next) {
+    db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
+        
+        axios.defaults.headers.post = null
+        axios.get(result[0].address+'/v1/health', null, null)
+        .then(response => { 
+            console.log('response from '+result[0].name+' agent', response.data)
+            res.json({"code":'200', "status":"Success", "description":"Successfully health check"});    
+        })
+        .catch(err => {
+            console.log(err)    
+            if(result[0].status !== 'beforeHandshake') {
+                db.query(agentSql.updatetAgentStatus(result[0].id.toString()),['stop'])
+                .then(result => {
+                    res.json({"code":'500', "status":"Server Error", "description":"Fail to health check"});
+                })
+                .catch(err => {
+                    console.log(err)
+                    res.json({"code":'500', "status":"Server Error", "description":"Fail to update status in database"});
+                })
+            } else {
+                res.json({"code":'500', "status":"Server Error", "description":"Fail to health check"});
+            }
+        })
+    })
+    .catch(err => {
+        console.log(err)
+        res.json({"code":'500', "status":"Server Error", "description":"Unexpected error"});    
+    })
+});
+
 router.get('/handshake', function(req, res, next) {
     var networkInterfaces = os.networkInterfaces();
     db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
@@ -201,7 +237,32 @@ router.post('/cron/start', function(req, res, next) {
 });
 
 router.get('/cron/stop', function(req, res, next) {
-    res.render('main',{url : 'agent-register'});
+    db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
+        const headers = {
+            'Authorization': 'bearer '+result[0].jwt,
+            'Content-type': 'application/json'
+        }
+        axios.defaults.headers.post = null
+        axios.get(result[0].address+'/v1/cron/stop', null, {headers})
+        .then(response => { 
+            console.log('response from '+result[0].name+' agent', response.data)
+            db.query(agentSql.updatetAgentStatus(result[0].id.toString()),['stop'])
+            .then(result => {
+                res.json({"code":'200', "status":"Success", "description":"Successfully Handshake"});    
+            })
+            .catch(err => {
+                console.log(err)
+            })
+        })
+        .catch(err => {
+            console.log(err)    
+            res.json({"code":'500', "status":"Server Error", "description":"Fail to handshake"});
+        })
+    })
+    .catch(err => {
+        console.log(err)
+        res.json({"code":'500', "status":"Server Error", "description":"Unexpected error"});    
+    })
 });
 
 router.post('/v1/windows/resource/receive', function(req, res, next) {
@@ -282,5 +343,11 @@ function calculateResource (data, os) {
         return result
     } 
     
+}
+
+function getDateFormat(rawDate) {
+    var date = new Date(rawDate);
+    const transformedDate = date.getFullYear()+'-'+(date.getMonth()+1)+'-'+date.getDate()+' '+date.getHours()+':'+date.getMinutes()+':'+date.getSeconds()
+    return transformedDate
 }
 module.exports = router;

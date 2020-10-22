@@ -5,17 +5,28 @@
       <div class="btn-group mr-2">
         <button type="button" class="btn btn-sm btn-outline-secondary" id="Handshake"
           onclick="handshakeAgent();">Handshake</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="Active" onclick="activeAgent();">Active</button>
+        <input type="button" class="btn btn-sm btn-outline-secondary" id="active" value="On" onclick="activeAgent();" />
+        <!-- <input type="button" class="btn btn-sm btn-outline-secondary" id="inactive" value="Off" onclick="inactiveAgent();" /> -->
       </div>
-      <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle">
+      <div class="dropdown">
+        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          Dropdown button
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          <a class="dropdown-item" href="#">Action</a>
+          <a class="dropdown-item" href="#">Another action</a>
+          <a class="dropdown-item" href="#">Something else here</a>
+        </div>
+      </div>
+      <!-- <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle">
         <span data-feather="calendar"></span>
         This week
-      </button>
+      </button> -->
     </div>
   </div>
   <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
 
-  <div class="col-md-8 order-md-1">
+  <div class="col-md-8 order-md-1" style="margin-left: 100px;">
     <!-- <form class="form-signin" action="/agent" method="POST">
         <input type="hidden" name="_method" value="put" /> -->
     <input type="hidden" name="name" class="form-control" id="name" value="<%=rows.name %>">
@@ -52,6 +63,14 @@
         Please enter the agent address.
       </div>
     </div>
+    <div class="mb-3">
+      <label for="create_at">Create Time</label>
+      <input type="create_at" name="create_at" class="form-control" id="create_at" value="<%=rows.create_at %>" disabled>
+    </div>
+    <div class="mb-3">
+      <label for="update_at">Update Time</label>
+      <input type="update_at" name="update_at" class="form-control" id="update_at" value="<%=rows.update_at %>" disabled>
+    </div>
     <button class="btn btn-primary" id="update" type="button" onclick="updateBtn();">Update</button>
     <button class="btn btn-danger" id="delete" type="button" onclick="deleteBtn();">Delete</button>
     </form>
@@ -61,10 +80,36 @@
 <!-- <link rel="stylesheet" type="text/css" href="/chart/Chart.min.css"> -->
 <script>
   window.addEventListener('DOMContentLoaded', function()  {
+    let query = '?name='+"<%= rows.name %>"
+    var xhr = requestSend('get','/agent/healthcheck',query)
+    // xhr.onprogress = function () {
+    //     console.log('LOADING: ', xhr.status);
+    // };
+    // xhr.onload = function () {
+    //     console.log('DONE: ', xhr.status);
+    // };
+    xhr.onreadystatechange = function (e) {
+      const res = JSON.parse(xhr.response)
+      if (res.code === "200" || res.code == "201") {
+        // alert('Successfully the agent health check')
+        console.log('Successfully the agent health check');
+        // location.reload(true)
+      } else if(res.code ==="500") {
+        alert("Fail to health check. Check the agent status.");
+        // location.reload(true)
+      } else {
+        alert("Unexpected error");
+      }
+    }
+
     var status = document.getElementById('status').value;
     var handshakeBtn = document.getElementById('Handshake');
-    if(status !== 'beforeHandshake') {
+    if(status === 'stop') {
       handshakeBtn.disabled = 'disabled';
+      document.getElementById('active').value = "On";
+    } else if(status === 'running') {
+      handshakeBtn.disabled = 'disabled';
+      document.getElementById('active').value = "Off";
     } else {
       handshakeBtn.disabled = false;
     }
@@ -214,24 +259,44 @@
   }
 
   function activeAgent() {
+    let activeBtn = document.getElementById('active').value
     let query = '?name='+"<%= rows.name %>"
-    var xhr = requestSend('post','/agent/cron/start',query)
-    // xhr.onprogress = function () {
-    //     console.log('LOADING: ', xhr.status);
-    // };
-    // xhr.onload = function () {
-    //     console.log('DONE: ', xhr.status);
-    // };
-    xhr.onreadystatechange = function (e) {
-      const res = JSON.parse(xhr.response)
-      if (res.code === "200" || res.code == "201") {
-        alert('Successfully '+"<%= rows.name %>"+' agent cron start')
-        location.reload(true);
-        // window.location.href = '/agent/main';
-      } else {
-        alert("Unexpected error");
+    if(activeBtn === 'On') {
+      var xhr = requestSend('post','/agent/cron/start',query)
+      // xhr.onprogress = function () {
+      //     console.log('LOADING: ', xhr.status);
+      // };
+      // xhr.onload = function () {
+      //     console.log('DONE: ', xhr.status);
+      // };
+      xhr.onreadystatechange = function (e) {
+        const res = JSON.parse(xhr.response)
+        if (res.code === "200" || res.code == "201") {
+          alert('Successfully '+"<%= rows.name %>"+' agent cron start')
+          location.reload(true);
+        } else {
+          alert("Unexpected error");
+        }
+      }
+    } else {
+      var xhr = requestSend('get','/agent/cron/stop',query)
+      // xhr.onprogress = function () {
+      //     console.log('LOADING: ', xhr.status);
+      // };
+      // xhr.onload = function () {
+      //     console.log('DONE: ', xhr.status);
+      // };
+      xhr.onreadystatechange = function (e) {
+        const res = JSON.parse(xhr.response)
+        if (res.code === "200" || res.code == "201") {
+          alert('Successfully '+"<%= rows.name %>"+' agent cron stop')
+          location.reload(true);
+        } else {
+          alert("Unexpected error");
+        }
       }
     }
+    
   }
 
   function requestSend(method, url, query, body) {

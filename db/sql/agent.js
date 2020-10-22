@@ -2,7 +2,7 @@ var sql = () => {
 };
 
 sql.getAgentList = () => {
-    let stringQuery = "SELECT name, description, os, version, status, TODATE(create_at) as create_at, TODATE(update_at) as update_at ";
+    let stringQuery = "SELECT name, description, os, version, status, create_at, update_at ";
     stringQuery += " FROM monitoring.agent";
     return stringQuery
 };

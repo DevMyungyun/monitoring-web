@@ -25,5 +25,10 @@ sql.insertResource= () => {
     return stringQuery
 }
 
+sql.getTotalCountResource= () => {
+    let stringQuery = "SELECT COUNT(*) ";
+    stringQuery += " FROM monitoring.resource";
+    return stringQuery
+};
 
 module.exports = sql;
