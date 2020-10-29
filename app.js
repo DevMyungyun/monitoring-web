@@ -7,6 +7,7 @@ const bodyParser = require('body-parser')
 var logger = require('morgan');
 
 
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var jwtRouter = require('./routes/jwt');
@@ -30,14 +31,15 @@ app.use('/chart', express.static(path.join(__dirname, 'node_modules', 'chart.js'
 
 // session setting
 app.use(session({
-        key: 'sid',
-        secret: 'example',
-        cookie:{
-            maxAge:24000 * 60 * 60 // 24 hours
-        },
-        resave: false,
-        saveUninitialized: true
+  key: 'sid',
+  secret: 'example',
+  cookie:{
+      maxAge:24000 * 60 * 60 // 24 hours
+  },
+  resave: false,
+  saveUninitialized: true
 }));
+
 
 app.use('/', indexRouter);
 app.use('/user', usersRouter);

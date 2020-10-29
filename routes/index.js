@@ -4,13 +4,16 @@ const agentSql = require('../db/sql/agent')
 const db = require('../db/db');
 const { log } = require('debug');
 
+const AgentSql = new agentSql()
+const DB = new db()
+
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
 router.get('/main', function(req, res, next) {
-  db.query(agentSql.getAgentList(),[]).then(result => {
+  DB.query(AgentSql.getAgentList(),[]).then(result => {
     let context = {}
     context.url = 'dashboard'
     let windows = []

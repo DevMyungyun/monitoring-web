@@ -28,10 +28,9 @@ const client = new cassandra.Client({
     }
  });
 
-var db = () => {
-}
+function db () {}
 
-db.query = async (query, params) => {
+db.prototype.query = async function (query, params) {
   try {
     const result = await client.execute(query, params, { prepare: true, isIdempotent: true });
     // console.log('result db', result.rows);
@@ -65,7 +64,7 @@ db.query = async (query, params) => {
 //     });
 // }
 
-db.resultMsg = (vdata) => {
+db.prototype.resultMsg = function (vdata) {
 	var vresult = {};
 	// vresult['code'] = vcode;
 	vresult['statusMsg'] = errorMsg[vcode];

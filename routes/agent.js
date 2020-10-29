@@ -11,8 +11,12 @@ const conifg = require( '../config' )
 const cassandra = require('cassandra-driver');
 const Uuid = cassandra.types.Uuid;
 
+const AgentSql = new agentSql()
+const ResourceSql = new resourceSql()
+const DB = new db()
+
 router.get('/main', function(req, res, next) {
-    db.query(agentSql.getAgentList(),[]).then(result => {
+    DB.query(AgentSql.getAgentList(),[]).then(result => {
         let data = {}
         data.url= 'agent-main'
         result.forEach(el => {
@@ -37,7 +41,7 @@ router.get('/register', function(req, res, next) {
 
 router.get('/', function(req, res, next) {
     let params = req.query
-    db.query(agentSql.getSingleAgent(),[params.name]).then(result => {
+    DB.query(AgentSql.getSingleAgent(),[params.name]).then(result => {
         // console.log("list###", result);
         let context = {}
         context.url= 'agent-detail'
@@ -51,7 +55,7 @@ router.get('/', function(req, res, next) {
         context.rows.create_at=getDateFormat(result[0].create_at)
         context.rows.update_at=getDateFormat(result[0].update_at)
         let dataLength = (params.length) ? params.length : 10
-        db.query(resourceSql.getSingleResource(),[result[0].id.toString(),dataLength]).then(result2 => {
+        DB.query(ResourceSql.getSingleResource(),[result[0].id.toString(),dataLength]).then(result2 => {
             let saved_at = []
             let cpu = []
             let mem = []
@@ -88,7 +92,7 @@ router.post('/', function(req, res, next) {
     try {
         const token = jwt.generateToken("HS512", body.name, uuid.toString(), hashSecret)
         let params = [uuid.toString(), body.name, body.description, body.os, body.version, "beforeHandshake", body.address, token]
-        db.query(agentSql.insertAgent(),params).then(result => {
+        DB.query(AgentSql.insertAgent(),params).then(result => {
             console.log(result);
             res.redirect("/agent/main");
         })
@@ -104,10 +108,10 @@ router.put('/', function(req, res, next) {
     let body = req.body
     console.log(">>>>>",req.body);
     try {
-        db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
+        DB.query(AgentSql.getSingleAgent(),[req.query.name]).then(result => {
             console.log(result);
             let params = [body.description, body.os, body.version, body.address]
-            db.query(agentSql.updatetAgent(result[0].id.toString()),params).then(result2 => {
+            DB.query(AgentSql.updatetAgent(result[0].id.toString()),params).then(result2 => {
                 res.json({"code":'200', "status":"success", "description":"Successfully update"});
             })
             .catch(err => {
@@ -125,8 +129,8 @@ router.put('/', function(req, res, next) {
 
 router.delete('/', function(req, res, next) {
     console.log(req.query);
-    db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
-        db.query(agentSql.deleteAgent(),[result[0].id.toString()]).then(result2 => {
+    DB.query(AgentSql.getSingleAgent(),[req.query.name]).then(result => {
+        DB.query(AgentSql.deleteAgent(),[result[0].id.toString()]).then(result2 => {
             res.json({"code":'200', "status":"success", "description":"Successfully delete"});
         })
         .catch(err => {
@@ -142,7 +146,7 @@ router.delete('/', function(req, res, next) {
 });
 
 router.get('/healthcheck', function(req, res, next) {
-    db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
+    DB.query(AgentSql.getSingleAgent(),[req.query.name]).then(result => {
         
         axios.defaults.headers.post = null
         axios.get(result[0].address+'/v1/health', null, null)
@@ -153,7 +157,7 @@ router.get('/healthcheck', function(req, res, next) {
         .catch(err => {
             console.log(err)    
             if(result[0].status !== 'beforeHandshake') {
-                db.query(agentSql.updatetAgentStatus(result[0].id.toString()),['stop'])
+                DB.query(AgentSql.updatetAgentStatus(result[0].id.toString()),['stop'])
                 .then(result => {
                     res.json({"code":'500', "status":"Server Error", "description":"Fail to health check"});
                 })
@@ -174,7 +178,7 @@ router.get('/healthcheck', function(req, res, next) {
 
 router.get('/handshake', function(req, res, next) {
     var networkInterfaces = os.networkInterfaces();
-    db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
+    DB.query(AgentSql.getSingleAgent(),[req.query.name]).then(result => {
         const headers = {
             'Authorization': 'bearer '+result[0].jwt,
             'Content-type': 'application/json'
@@ -188,7 +192,7 @@ router.get('/handshake', function(req, res, next) {
         axios.post(result[0].address+'/handshake', body, {headers})
         .then(response => { 
             console.log('response from '+result[0].name+' agent', response.data)
-            db.query(agentSql.updatetAgentStatus(result[0].id.toString()),['stop'])
+            DB.query(AgentSql.updatetAgentStatus(result[0].id.toString()),['stop'])
             .then(result => {
                 res.json({"code":'200', "status":"Success", "description":"Successfully Handshake"});    
             })
@@ -208,7 +212,7 @@ router.get('/handshake', function(req, res, next) {
 });
 
 router.post('/cron/start', function(req, res, next) {
-    db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
+    DB.query(AgentSql.getSingleAgent(),[req.query.name]).then(result => {
         const headers = {
             'Authorization': 'bearer '+result[0].jwt,
             'Content-type': 'application/json'
@@ -217,7 +221,7 @@ router.post('/cron/start', function(req, res, next) {
         axios.post(result[0].address+'/v1/cron/start', null, {headers})
         .then(response => { 
             console.log('response from '+result[0].name+' agent', response.data)
-            db.query(agentSql.updatetAgentStatus(result[0].id.toString()),['running'])
+            DB.query(AgentSql.updatetAgentStatus(result[0].id.toString()),['running'])
             .then(result => {
                 res.json({"code":'200', "status":"Success", "description":"Successfully Handshake"});    
             })
@@ -237,7 +241,7 @@ router.post('/cron/start', function(req, res, next) {
 });
 
 router.get('/cron/stop', function(req, res, next) {
-    db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
+    DB.query(AgentSql.getSingleAgent(),[req.query.name]).then(result => {
         const headers = {
             'Authorization': 'bearer '+result[0].jwt,
             'Content-type': 'application/json'
@@ -246,7 +250,7 @@ router.get('/cron/stop', function(req, res, next) {
         axios.get(result[0].address+'/v1/cron/stop', null, {headers})
         .then(response => { 
             console.log('response from '+result[0].name+' agent', response.data)
-            db.query(agentSql.updatetAgentStatus(result[0].id.toString()),['stop'])
+            DB.query(AgentSql.updatetAgentStatus(result[0].id.toString()),['stop'])
             .then(result => {
                 res.json({"code":'200', "status":"Success", "description":"Successfully Handshake"});    
             })
@@ -273,13 +277,13 @@ router.post('/v1/windows/resource/receive', function(req, res, next) {
   let resourceData = calculateResource(body, "windows")
   let token = req.headers.authorization.split(" ")
   token = token[1]
-  db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
+  DB.query(AgentSql.getSingleAgent(),[req.query.name]).then(result => {
     let hashSecret = crypto.createHash("sha512").update(result[0].id.toString()).digest("hex");
     let tokenCheck = jwt.veryfyToekn(token,hashSecret)
     console.log(tokenCheck);
     // insert resource data in DB
     const uuid = Uuid.random();
-    db.query(resourceSql.insertResource(),[uuid,result[0].id, resourceData.cpu, resourceData.mem, resourceData.disk]).then(result2 => {
+    DB.query(ResourceSql.insertResource(),[uuid,result[0].id, resourceData.cpu, resourceData.mem, resourceData.disk]).then(result2 => {
         console.log(result2);
     })
     .catch(err => {
@@ -297,13 +301,13 @@ router.post('/v1/linux/resource/receive', function(req, res, next) {
     let resourceData = calculateResource(body, "linux")
     let token = req.headers.authorization.split(" ")
     token = token[1]
-    db.query(agentSql.getSingleAgent(),[req.query.name]).then(result => {
+    DB.query(AgentSql.getSingleAgent(),[req.query.name]).then(result => {
       let hashSecret = crypto.createHash("sha512").update(result[0].id.toString()).digest("hex");
       let tokenCheck = jwt.veryfyToekn(token,hashSecret)
       console.log(tokenCheck);
       // insert resource data in DB
       const uuid = Uuid.random();
-      db.query(resourceSql.insertResource(),[uuid,result[0].id, resourceData.cpu, resourceData.mem, resourceData.disk]).then(result2 => {
+      DB.query(ResourceSql.insertResource(),[uuid,result[0].id, resourceData.cpu, resourceData.mem, resourceData.disk]).then(result2 => {
           console.log(result2);
       })
       .catch(err => {

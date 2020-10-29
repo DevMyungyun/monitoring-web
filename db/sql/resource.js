@@ -1,7 +1,6 @@
-var sql = () => {
-};
+function sql () {};
 
-sql.getResourceList = () => {
+sql.prototype.getResourceList = function () {
     let stringQuery = "SELECT * ";
     stringQuery += " FROM monitoring.resource";
     stringQuery += " ";
@@ -9,7 +8,7 @@ sql.getResourceList = () => {
     return stringQuery
 };
 
-sql.getSingleResource= () => {
+sql.prototype.getSingleResource= function () {
     let stringQuery = "SELECT * ";
     stringQuery += " FROM monitoring.resource";
     stringQuery += " WHERE aid = ?";
@@ -18,14 +17,14 @@ sql.getSingleResource= () => {
     return stringQuery
 };
 
-sql.insertResource= () => {
+sql.prototype.insertResource= function () {
     let stringQuery = "INSERT INTO monitoring.resource "
     stringQuery += "(id,aid,cpu,memory,disk,saved_at) ";
     stringQuery += "VALUES (?,?,?,?,?,toTimestamp(now()))";
     return stringQuery
 }
 
-sql.getTotalCountResource= () => {
+sql.prototype.getTotalCountResource= function () {
     let stringQuery = "SELECT COUNT(*) ";
     stringQuery += " FROM monitoring.resource";
     return stringQuery

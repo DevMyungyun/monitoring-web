@@ -2,11 +2,14 @@ const { log } = require('debug');
 const express = require('express');
 const router = express.Router();
 const db = require('../db/db.js')
-const sql = require('../db/sql/user.js')
+const userSql = require('../db/sql/user.js')
 const crypto = require('crypto')
 
+const UserSql = new userSql()
+const DB = new db()
+
 router.get('/signup', function(req, res, next) {
-  res.render("user/signup");
+  res.render("/user/signup");
 });
 
 router.post("/signup", function(req,res,next){
@@ -14,32 +17,29 @@ router.post("/signup", function(req,res,next){
   let hashPassword = crypto.createHash("sha512").update(body.password).digest("hex");
 
   let params = [body.userName, body.userEmail, hashPassword]
-  console.log('>>',params);
-  console.log('>>', typeof sql.insertUser());
-  console.log('>>', sql.insertUser());
-  db.query(sql.insertUser(), params).then(rows => {
+  // console.log('>>',params);
+  // console.log('>>', typeof UserSql.insertUser());
+  // console.log('>>', UserSql.insertUser());
+  DB.query(UserSql.insertUser(), params).then(rows => {
     console.log('rows',rows);
   })
   res.redirect("/user/signup");
 })
 
-router.get('/', function(req, res, next) {
-  if(req.cookies){
-    console.log(req.cookies);
-  }
-  res.send('Welcome Monitoring Page!');
-});
-
 router.get('/login', function(req, res, next) {
   let session = req.session;
-  res.render("user/login", {
-    session : session
-  });
+  if(req.session) {
+    res.redirect('/agent/main')
+  } else {
+    res.render("/user/login", {
+      session : session
+    });
+  }
 });
 
 router.post("/login", async function(req,res,next){
   let body = req.body;
-  db.query(sql.getSingleUser(), [body.userEmail]).then(rows => {
+  DB.query(UserSql.getSingleUser(), [body.userEmail]).then(rows => {
     console.log('rows',rows[0]);
     
     let dbPassword = rows[0].password;
@@ -79,7 +79,7 @@ router.get("/logout", function(req,res,next){
   }
 })
 
-/** session 확인 */
+// session confirm
 router.route('/confirmSession').get(function (req, res) {
   console.log('check the session!');
   let msg = `no session exist..`

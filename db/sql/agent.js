@@ -1,27 +1,26 @@
-var sql = () => {
-};
+function sql () {};
 
-sql.getAgentList = () => {
+sql.prototype.getAgentList = function () {
     let stringQuery = "SELECT name, description, os, version, status, create_at, update_at ";
     stringQuery += " FROM monitoring.agent";
     return stringQuery
 };
 
-sql.getSingleAgent= () => {
+sql.prototype.getSingleAgent= function () {
     let stringQuery = "SELECT * ";
     stringQuery += " FROM monitoring.agent";
     stringQuery += " WHERE name=? ALLOW FILTERING"
     return stringQuery
 };
 
-sql.insertAgent= () => {
+sql.prototype.insertAgent= function () {
     let stringQuery = "INSERT INTO monitoring.agent "
     stringQuery += "(id,name,description,os,version,status,address,jwt,create_at) ";
     stringQuery += "VALUES (?,?,?,?,?,?,?,?,toTimestamp(now()))";
     return stringQuery
 }
 
-sql.updatetAgent= (id) => {
+sql.prototype.updatetAgent= function(id) {
     let stringQuery = "UPDATE monitoring.agent ";
     stringQuery += "SET "
     stringQuery += "description=?, os=?, version=?, address=?, update_at=toTimestamp(now()) ";
@@ -29,7 +28,7 @@ sql.updatetAgent= (id) => {
     return stringQuery
 }
 
-sql.updatetAgentStatus= (id) => {
+sql.prototype.updatetAgentStatus= function(id) {
     let stringQuery = "UPDATE monitoring.agent ";
     stringQuery += "SET "
     stringQuery += "status=?, update_at=toTimestamp(now()) ";
@@ -37,7 +36,7 @@ sql.updatetAgentStatus= (id) => {
     return stringQuery
 }
 
-sql.deleteAgent= () => {
+sql.prototype.deleteAgent= function() {
     let stringQuery = "DELETE FROM monitoring.agent ";
     stringQuery += "WHERE id =?";
     return stringQuery
