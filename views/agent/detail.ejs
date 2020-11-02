@@ -9,7 +9,8 @@
         <!-- <input type="button" class="btn btn-sm btn-outline-secondary" id="inactive" value="Off" onclick="inactiveAgent();" /> -->
       </div>
       <div class="dropdown">
-        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown"
+          aria-haspopup="true" aria-expanded="true">
           Dropdown button
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -65,11 +66,13 @@
     </div>
     <div class="mb-3">
       <label for="create_at">Create Time</label>
-      <input type="create_at" name="create_at" class="form-control" id="create_at" value="<%=rows.create_at %>" disabled>
+      <input type="create_at" name="create_at" class="form-control" id="create_at" value="<%=rows.create_at %>"
+        disabled>
     </div>
     <div class="mb-3">
       <label for="update_at">Update Time</label>
-      <input type="update_at" name="update_at" class="form-control" id="update_at" value="<%=rows.update_at %>" disabled>
+      <input type="update_at" name="update_at" class="form-control" id="update_at" value="<%=rows.update_at %>"
+        disabled>
     </div>
     <button class="btn btn-primary" id="update" type="button" onclick="updateBtn();">Update</button>
     <button class="btn btn-danger" id="delete" type="button" onclick="deleteBtn();">Delete</button>
@@ -77,37 +80,27 @@
   </div>
 </main>
 <script src="/chart/Chart.js"></script>
+<script src="/javascripts/http.js"></script>
 <!-- <link rel="stylesheet" type="text/css" href="/chart/Chart.min.css"> -->
 <script>
-  window.addEventListener('DOMContentLoaded', function()  {
-    let query = '?name='+"<%= rows.name %>"
-    var xhr = requestSend('get','/agent/healthcheck',query)
-    // xhr.onprogress = function () {
-    //     console.log('LOADING: ', xhr.status);
-    // };
-    // xhr.onload = function () {
-    //     console.log('DONE: ', xhr.status);
-    // };
-    xhr.onreadystatechange = function (e) {
-      const res = JSON.parse(xhr.response)
-      if (res.code === "200" || res.code == "201") {
-        // alert('Successfully the agent health check')
-        console.log('Successfully the agent health check');
-        // location.reload(true)
-      } else if(res.code ==="500") {
-        alert("Fail to health check. Check the agent status.");
-        // location.reload(true)
+  window.addEventListener('DOMContentLoaded', function () {
+    let query = '?name=' + "<%= rows.name %>"
+    httpRequest('get', '/agent/healthcheck', query).then(result => {
+      if (result.code === '200') {
+        console.log('Successfully health check the agent')
+      } else if (result.code === '500') {
+        alert("Fail to health check. Check the agent status.")
       } else {
         alert("Unexpected error");
       }
-    }
+    })
 
     var status = document.getElementById('status').value;
     var handshakeBtn = document.getElementById('Handshake');
-    if(status === 'stop') {
+    if (status === 'stop') {
       handshakeBtn.disabled = 'disabled';
       document.getElementById('active').value = "On";
-    } else if(status === 'running') {
+    } else if (status === 'running') {
       handshakeBtn.disabled = 'disabled';
       document.getElementById('active').value = "Off";
     } else {
@@ -115,7 +108,7 @@
     }
   });
 
-  var data = <%- context %>;
+  var data = <%-context %> ;
   var ctx = document.getElementById('myChart');
   var myChart = new Chart(ctx, {
     type: 'line',
@@ -185,23 +178,18 @@
 
   function deleteBtn() {
     if (confirm("Are you sure of delete this agent?")) {
-      let query = '?name='+"<%= rows.name %>"
-      var xhr = requestSend('delete','/agent',query)
-      // xhr.onprogress = function () {
-      //     console.log('LOADING: ', xhr.status);
-      // };
-      // xhr.onload = function () {
-      //     console.log('DONE: ', xhr.status);
-      // };
-      xhr.onreadystatechange = function (e) {
-        const res = JSON.parse(xhr.response)
-        if (res.code === "200" || res.code == "201") {
-          alert('Successfully delete the agent')
+      let query = '?name=' + "<%= rows.name %>"
+
+      httpRequest('delete', '/agent', query).then(result => {
+        if (result.code === '200') {
+          alert('Successfully delete the agent.')
           window.location.href = '/agent/main';
+        } else if (result.code === '500') {
+          alert("Fail to delete the agent.")
         } else {
           alert("Unexpected error");
         }
-      }
+      })
     } else {
       console.log('Cancel delete this agent.');
     }
@@ -215,113 +203,63 @@
       body.version = document.getElementById('version').value
       body.address = document.getElementById('address').value
 
-      let query = '?name='+"<%= rows.name %>"
-      var xhr = requestSend('put','/agent',query,body)
-      // xhr.onprogress = function () {
-      //     console.log('LOADING: ', xhr.status);
-      // };
-      // xhr.onload = function () {
-      //     console.log('DONE: ', xhr.status);
-      // };
-      xhr.onreadystatechange = function (e) {
-        const res = JSON.parse(xhr.response)
-        if (res.code === "200" || res.code == "201") {
-          alert('Successfully update the agent')
+      let query = '?name=' + "<%= rows.name %>"
+      httpRequest('put', '/agent', query, body).then(result => {
+        if (result.code === '200') {
+          alert('Successfully update the agent.')
           window.location.href = '/agent/main';
+        } else if (result.code === '500') {
+          alert("Fail to update the agent.")
         } else {
           alert("Unexpected error");
         }
-      }
+      })
     } else {
       console.log('Cancel delete this agent.');
     }
   }
 
   function handshakeAgent() {
-    let query = '?name='+"<%= rows.name %>"
-    var xhr = requestSend('get','/agent/handshake',query)
-    // xhr.onprogress = function () {
-    //     console.log('LOADING: ', xhr.status);
-    // };
-    // xhr.onload = function () {
-    //     console.log('DONE: ', xhr.status);
-    // };
-    xhr.onreadystatechange = function (e) {
-      const res = JSON.parse(xhr.response)
-      if (res.code === "200" || res.code == "201") {
-        alert('Successfully handshake with '+"<%= rows.name %>"+' agent')
-        location.reload(true);
-        // window.location.href = '/agent/main';
+    let query = '?name=' + "<%= rows.name %>"
+    httpRequest('get', '/agent/handshake', query).then(result => {
+      if (result.code === '200') {
+        alert('Successfully handshake with ' + "<%= rows.name %>" + ' agent')
+      } else if (result.code === '500') {
+        alert("Fail to handshake with the agent.")
       } else {
         alert("Unexpected error");
       }
-    }
+    })
+    
   }
 
   function activeAgent() {
     let activeBtn = document.getElementById('active').value
-    let query = '?name='+"<%= rows.name %>"
-    if(activeBtn === 'On') {
-      var xhr = requestSend('post','/agent/cron/start',query)
-      // xhr.onprogress = function () {
-      //     console.log('LOADING: ', xhr.status);
-      // };
-      // xhr.onload = function () {
-      //     console.log('DONE: ', xhr.status);
-      // };
-      xhr.onreadystatechange = function (e) {
-        const res = JSON.parse(xhr.response)
-        if (res.code === "200" || res.code == "201") {
-          alert('Successfully '+"<%= rows.name %>"+' agent cron start')
+    let query = '?name=' + "<%= rows.name %>"
+    if (activeBtn === 'On') {
+      httpRequest('post', '/agent/cron/start', query).then(result => {
+        if (result.code === '200') {
+          alert('Successfully ' + "<%= rows.name %>" + ' agent cron start')
           location.reload(true);
+        } else if (result.code === '500') {
+          alert("Fail to start the agent.")
         } else {
           alert("Unexpected error");
         }
-      }
+      })
     } else {
-      var xhr = requestSend('get','/agent/cron/stop',query)
-      // xhr.onprogress = function () {
-      //     console.log('LOADING: ', xhr.status);
-      // };
-      // xhr.onload = function () {
-      //     console.log('DONE: ', xhr.status);
-      // };
-      xhr.onreadystatechange = function (e) {
-        const res = JSON.parse(xhr.response)
-        if (res.code === "200" || res.code == "201") {
-          alert('Successfully '+"<%= rows.name %>"+' agent cron stop')
+      httpRequest('get', '/agent/cron/stop', query).then(result => {
+        if (result.code === '200') {
+          alert('Successfully ' + "<%= rows.name %>" + ' agent stop')
           location.reload(true);
+        } else if (result.code === '500') {
+          alert("Fail to stop the agent.")
         } else {
           alert("Unexpected error");
         }
-      }
+      })
     }
-    
+
   }
 
-  function requestSend(method, url, query, body) {
-    var xhr;
-    if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
-      xhr = new XMLHttpRequest();
-    } else { // code for IE6, IE5
-      xhr = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    xhr.open(method, url+query, true);
-    xhr.setRequestHeader("Content-Type", "application/json")
-    if (body) {
-      var jsonBody = JSON.stringify(body)
-      try {
-        xhr.send(jsonBody);
-      } catch (e) {
-        console.log(e);
-      }
-    } else {
-      try {
-        xhr.send();
-      } catch (e) {
-        console.log(e);
-      }
-    }
-    return xhr
-  }
 </script>

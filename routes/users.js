@@ -29,7 +29,7 @@ router.post("/signup", function(req,res,next){
 router.get('/login', function(req, res, next) {
   let session = req.session;
   if(req.session) {
-    res.redirect('/agent/main')
+    res.redirect('/main')
   } else {
     res.render("/user/login", {
       session : session
