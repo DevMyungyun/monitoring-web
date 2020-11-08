@@ -22,9 +22,13 @@ router.post("/generate", function (req, res, next) {
     console.log('uuid', uuid);
     let hashSecret = crypto.createHash("sha512").update(uuid).digest("hex");
     console.log('hash secret', hashSecret);
-    token = jwt.generateToken("HS512", rows[0].name, uuid, hashSecret)
-    console.log('jwt token', token);
-    res.json(token);
+    try {
+      token = jwt.generateToken("HS512", rows[0].name, uuid, hashSecret)
+      console.log('jwt token', token);
+      res.json(token);
+    } catch (e) {
+      console.log('JWT generation error',e)
+    }
   })
 })
 
@@ -43,9 +47,13 @@ router.get('/verify', (req, res, next) => {
     let uuid = rows[0].id.toString()
     let hashSecret = crypto.createHash("sha512").update(uuid).digest("hex");
     console.log('hash secret', hashSecret);
-    let result = jwt.veryfyToekn(clientToken[1], hashSecret)
-    console.log('verify token',result);
-    (result !== null && result !== false ) ? res.status(201).json({success: 'authorized'}) : res.status(401).json({error: 'unauthorized'})
+    try {
+      let result = jwt.veryfyToekn(clientToken[1], hashSecret)
+      console.log('verify token',result);
+      (result !== null && result !== false ) ? res.status(201).json({success: 'authorized'}) : res.status(401).json({error: 'unauthorized'})
+    } catch (e) {
+      console.log('JWT Verify error',e);
+    }
   })
 })
 
