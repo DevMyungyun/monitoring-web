@@ -134,8 +134,7 @@ router.put('/', function (req, res, next) {
               "status": "success",
               "description": "Successfully update"
             });
-          })
-          .catch(err => {
+          }).catch(err => {
             console.log(err)
             res.json({
               "code": '500',
@@ -143,8 +142,7 @@ router.put('/', function (req, res, next) {
               "description": "Fail to update"
             });
           })
-      })
-      .catch(err => {
+      }).catch(err => {
         console.log(err)
       })
   } catch (e) {
@@ -161,8 +159,7 @@ router.delete('/', function (req, res, next) {
             "status": "success",
             "description": "Successfully delete"
           });
-        })
-        .catch(err => {
+        }).catch(err => {
           console.log(err)
           res.json({
             "code": '500',
@@ -170,8 +167,7 @@ router.delete('/', function (req, res, next) {
             "description": "Fail to delete"
           });
         })
-    })
-    .catch(err => {
+    }).catch(err => {
       console.log(err)
       res.json({
         "code": '500',
@@ -194,8 +190,7 @@ router.get('/healthcheck', function (req, res, next) {
             "status": "Success",
             "description": "Successfully health check"
           });
-        })
-        .catch(err => {
+        }).catch(err => {
           console.log(err)
           if (result[0].status !== 'beforeHandshake') {
             DB.query(AgentSql.updatetAgentStatus(result[0].id.toString()), ['stop'])
@@ -222,8 +217,7 @@ router.get('/healthcheck', function (req, res, next) {
             });
           }
         })
-    })
-    .catch(err => {
+    }).catch(err => {
       console.log(err)
       res.json({
         "code": '500',
@@ -258,12 +252,10 @@ router.get('/handshake', function (req, res, next) {
                 "status": "Success",
                 "description": "Successfully Handshake"
               });
-            })
-            .catch(err => {
+            }).catch(err => {
               console.log(err)
             })
-        })
-        .catch(err => {
+        }).catch(err => {
           console.log(err)
           res.json({
             "code": '500',
@@ -271,8 +263,7 @@ router.get('/handshake', function (req, res, next) {
             "description": "Fail to handshake"
           });
         })
-    })
-    .catch(err => {
+    }).catch(err => {
       console.log(err)
       res.json({
         "code": '500',

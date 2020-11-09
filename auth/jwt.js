@@ -11,7 +11,7 @@ jwtFunc.generateToken = (alg, iss, id, secret) => {
       }
       const token = jwt.sign(payload, secret, {
         algorithm: alg,
-        expiresIn: 60 * 60 * 24 * 365
+        expiresIn: 60 * 60
       });
       return token
     } else {

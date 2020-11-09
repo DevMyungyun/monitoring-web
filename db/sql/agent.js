@@ -36,6 +36,14 @@ sql.prototype.updatetAgentStatus= function(id) {
     return stringQuery
 }
 
+sql.prototype.updatetAgentJwt= function(id) {
+    let stringQuery = "UPDATE monitoring.agent ";
+    stringQuery += "SET "
+    stringQuery += "jwt=?, update_at=toTimestamp(now()) ";
+    stringQuery += "WHERE id ="+id;
+    return stringQuery
+}
+
 sql.prototype.deleteAgent= function() {
     let stringQuery = "DELETE FROM monitoring.agent ";
     stringQuery += "WHERE id =?";
