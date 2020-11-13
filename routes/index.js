@@ -28,7 +28,6 @@ router.get('/main', function(req, res, next) {
         etc.push(result[i].status)
       }
     }
-
     context.data = {}
     context.data.windows = windows
     context.data.linux = linux

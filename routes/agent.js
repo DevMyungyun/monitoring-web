@@ -63,21 +63,15 @@ router.get('/', function (req, res, next) {
       context.rows.update_at = getDateFormat(result[0].update_at)
       let dataLength = (params.length) ? params.length : 10
       DB.query(ResourceSql.getSingleResource(), [result[0].id.toString(), dataLength]).then(result2 => {
-          let saved_at = []
-          let cpu = []
-          let mem = []
-          let disk = []
+        context.data = []
           for (let i = 0; i < result2.length; i++) {
-            saved_at.push(getDateFormat(result2[i].saved_at))
-            cpu.push(result2[i].cpu)
-            mem.push(result2[i].memory)
-            disk.push(result2[i].disk)
+            let row = {}
+            row["saved_at"]=getDateFormat(result2[i].saved_at)
+            row["cpu"]=result2[i].cpu
+            row["mem"]=result2[i].memory
+            row["disk"]=result2[i].disk
+            context.data.push(row)
           }
-          context.data = {}
-          context.data.saved_at = saved_at
-          context.data.cpu = cpu
-          context.data.mem = mem
-          context.data.disk = disk
           res.render('main', context);
         })
         .catch(err => {
