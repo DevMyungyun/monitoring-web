@@ -2,4 +2,4 @@
 Resource monitoring webserver
 
 # monitoring agent github address
-https://github.com/myungyun/monitoring-web
+https://github.com/myungyun/monitoring-agent
