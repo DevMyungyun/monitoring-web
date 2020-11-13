@@ -11,9 +11,9 @@ sql.prototype.getResourceList = function () {
 sql.prototype.getSingleResource= function () {
     let stringQuery = "SELECT * ";
     stringQuery += " FROM monitoring.resource";
-    stringQuery += " WHERE aid = ?";
+    stringQuery += " WHERE aid = ? ";
+    stringQuery += " AND saved_at <= toTimeStamp(now()) and saved_at>=? "
     stringQuery += " ORDER BY saved_at DESC";
-    stringQuery += " LIMIT ?"
     return stringQuery
 };
 

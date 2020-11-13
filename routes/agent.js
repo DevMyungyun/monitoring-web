@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const os = require('os');
 const conifg = require('../config')
 const cassandra = require('cassandra-driver');
+const morgan = require('morgan');
 const Uuid = cassandra.types.Uuid;
 
 const AgentSql = new agentSql()
@@ -61,8 +62,10 @@ router.get('/', function (req, res, next) {
       context.rows.address = result[0].address
       context.rows.create_at = getDateFormat(result[0].create_at)
       context.rows.update_at = getDateFormat(result[0].update_at)
-      let dataLength = (params.length) ? params.length : 10
-      DB.query(ResourceSql.getSingleResource(), [result[0].id.toString(), dataLength]).then(result2 => {
+      var date = new Date();
+      const daybefore = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + (date.getDate()-1)
+      let dateset = (params.length) ? params.length : daybefore
+      DB.query(ResourceSql.getSingleResource(), [result[0].id.toString(), dateset]).then(result2 => {
         context.data = []
           for (let i = 0; i < result2.length; i++) {
             let row = {}

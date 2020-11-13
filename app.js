@@ -4,7 +4,8 @@ var path = require('path');
 const session = require('express-session');
 var cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser')
-var logger = require('morgan');
+var morgan = require('morgan');
+var winston = require('./winston')
 
 
 
@@ -19,7 +20,7 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-app.use(logger('dev'));
+app.use(morgan('combined',{ "stream": winston.stream }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.json())
