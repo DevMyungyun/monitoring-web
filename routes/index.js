@@ -3,16 +3,17 @@ const router = express.Router();
 const agentSql = require('../db/sql/agent')
 const db = require('../db/db');
 const { log } = require('debug');
+const session = require('../auth/session')
 
 const AgentSql = new agentSql()
 const DB = new db()
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+  res.redirect('/main')
 });
 
-router.get('/main', function(req, res, next) {
+router.get('/main', session.checkAuth, function(req, res, next) {
   DB.query(AgentSql.getAgentList(),[]).then(result => {
     let context = {}
     context.url = 'dashboard'

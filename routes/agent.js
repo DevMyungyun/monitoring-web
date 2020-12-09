@@ -11,12 +11,13 @@ const conifg = require('../config')
 const cassandra = require('cassandra-driver');
 const morgan = require('morgan');
 const Uuid = cassandra.types.Uuid;
+const session = require('../auth/session')
 
 const AgentSql = new agentSql()
 const ResourceSql = new resourceSql()
 const DB = new db()
 
-router.get('/main', function (req, res, next) {
+router.get('/main', session.checkAuth, function (req, res, next) {
   DB.query(AgentSql.getAgentList(), []).then(result => {
       let data = {}
       data.url = 'agent-main'
@@ -41,13 +42,13 @@ router.get('/main', function (req, res, next) {
     })
 });
 
-router.get('/register', function (req, res, next) {
+router.get('/register', session.checkAuth, function (req, res, next) {
   res.render('main', {
     url: 'agent-register'
   });
 });
 
-router.get('/', function (req, res, next) {
+router.get('/', session.checkAuth, function (req, res, next) {
   let params = req.query
   DB.query(AgentSql.getSingleAgent(), [params.name]).then(result => {
       // console.log("list###", result);
@@ -98,7 +99,7 @@ router.get('/', function (req, res, next) {
     })
 });
 
-router.post('/', function (req, res, next) {
+router.post('/', session.checkAuth, function (req, res, next) {
   const body = req.body
   const uuid = Uuid.random();
   let hashSecret = crypto.createHash("sha512").update(uuid.toString()).digest("hex");
@@ -118,7 +119,7 @@ router.post('/', function (req, res, next) {
   }
 });
 
-router.put('/', function (req, res, next) {
+router.put('/', session.checkAuth, function (req, res, next) {
   let body = req.body
   console.log(">>>>>", req.body);
   try {
@@ -147,7 +148,7 @@ router.put('/', function (req, res, next) {
   }
 });
 
-router.delete('/', function (req, res, next) {
+router.delete('/', session.checkAuth, function (req, res, next) {
   console.log(req.query);
   DB.query(AgentSql.getSingleAgent(), [req.query.name]).then(result => {
       DB.query(AgentSql.deleteAgent(), [result[0].id.toString()]).then(result2 => {
@@ -175,7 +176,7 @@ router.delete('/', function (req, res, next) {
 
 });
 
-router.get('/healthcheck', function (req, res, next) {
+router.get('/healthcheck', session.checkAuth, function (req, res, next) {
   DB.query(AgentSql.getSingleAgent(), [req.query.name]).then(result => {
 
       axios.defaults.headers.post = null
@@ -224,7 +225,7 @@ router.get('/healthcheck', function (req, res, next) {
     })
 });
 
-router.get('/handshake', function (req, res, next) {
+router.get('/handshake', session.checkAuth, function (req, res, next) {
   var networkInterfaces = os.networkInterfaces();
   DB.query(AgentSql.getSingleAgent(), [req.query.name]).then(result => {
       const headers = {
@@ -270,7 +271,7 @@ router.get('/handshake', function (req, res, next) {
     })
 });
 
-router.post('/cron/start', function (req, res, next) {
+router.post('/cron/start', session.checkAuth, function (req, res, next) {
   DB.query(AgentSql.getSingleAgent(), [req.query.name]).then(result => {
       const headers = {
         'Authorization': 'bearer ' + result[0].jwt,
@@ -313,7 +314,7 @@ router.post('/cron/start', function (req, res, next) {
     })
 });
 
-router.get('/cron/stop', function (req, res, next) {
+router.get('/cron/stop', session.checkAuth, function (req, res, next) {
   DB.query(AgentSql.getSingleAgent(), [req.query.name]).then(result => {
       const headers = {
         'Authorization': 'bearer ' + result[0].jwt,
@@ -356,7 +357,7 @@ router.get('/cron/stop', function (req, res, next) {
     })
 });
 
-router.post('/v1/windows/resource/receive', function (req, res, next) {
+router.post('/v1/windows/resource/receive', session.checkAuth, function (req, res, next) {
   console.log("########request#####", req.headers);
   console.log("########request#####", req.query);
   console.log("########request#####", req.body);
@@ -400,7 +401,7 @@ router.post('/v1/windows/resource/receive', function (req, res, next) {
 
 });
 
-router.post('/v1/linux/resource/receive', function (req, res, next) {
+router.post('/v1/linux/resource/receive', session.checkAuth, function (req, res, next) {
   let body = req.body
   let resourceData = calculateResource(body, "linux")
   let token = req.headers.authorization.split(" ")

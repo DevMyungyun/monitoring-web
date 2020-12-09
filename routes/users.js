@@ -4,79 +4,64 @@ const router = express.Router();
 const db = require('../db/db.js')
 const userSql = require('../db/sql/user.js')
 const crypto = require('crypto')
+const passport = require('passport');
+const session = require('../auth/session')
 
 const UserSql = new userSql()
 const DB = new db()
 
+const checkAuth = (req,res,next) =>{ 
+  if(req.isAuthenticated()){
+      return next();
+  }
+  res.redirect('/');
+}
+const checkNotAuth = (req,res,next)=>{
+  if(req.isAuthenticated()){
+      return res.redirect('/main');
+  }
+  next();
+}
+
 router.get('/signup', function(req, res, next) {
-  res.render("/user/signup");
+  res.render("signup");
 });
 
 router.post("/signup", function(req,res,next){
   let body = req.body;
   let hashPassword = crypto.createHash("sha512").update(body.password).digest("hex");
-
   let params = [body.userName, body.userEmail, hashPassword]
-  // console.log('>>',params);
-  // console.log('>>', typeof UserSql.insertUser());
-  // console.log('>>', UserSql.insertUser());
+  
   DB.query(UserSql.insertUser(), params).then(rows => {
     console.log('rows',rows);
   })
-  res.redirect("/user/signup");
+  res.redirect("signup");
 })
 
-router.get('/login', function(req, res, next) {
-  let session = req.session;
-  if(req.session) {
-    res.redirect('/main')
-  } else {
-    res.render("/user/login", {
-      session : session
-    });
-  }
+router.get('/login', session.checkNotAuth, function(req, res, next) {
+  // if(req.session) {
+  //   res.redirect('/main')
+  // } else {
+  //   res.render("/user/login", {
+  //     session : session
+  //   });
+  // }
+  res.render('login');
 });
 
-router.post("/login", async function(req,res,next){
-  let body = req.body;
-  DB.query(UserSql.getSingleUser(), [body.userEmail]).then(rows => {
-    console.log('rows',rows[0]);
-    
-    let dbPassword = rows[0].password;
-    let inputPassword = body.password;
-    let hashPassword = crypto.createHash("sha512").update(inputPassword).digest("hex");
-    if(dbPassword === hashPassword){
-      console.log("Successfully match password");
-      // Cookie setting
-      // res.cookie("user", body.userEmail , {
-      //   expires: new Date(Date.now() + 900000),
-      //   httpOnly: true
-      // });
-      // Session setting
-      req.session.email = body.userEmail;
-      res.redirect("/main");
-    } else{
-      console.log("Fail to match password");
-      res.redirect("/user/login");
-    }
-  })
-});
+router.post("/login", passport.authenticate('local',{
+  successRedirect : '/main',
+  failureRedirect : '/user/login',
+  failureFlash : true
+}));
 
 router.get("/logout", function(req,res,next){
   sess = req.session;
-  console.log('##session', sess);
-  if(sess.email){
-    res.clearCookie("sid")
-    req.session.destroy(function(err){
-      if(err){
-          console.log(err);
-      }else{
-          res.redirect('/user/login');
-      }
-    })
-  }else{
-    res.redirect('/user/login');
-  }
+  req.logout();
+  req.session.destroy();
+  res.clearCookie('sid')
+  res.redirect('/user/login');
+  // console.log('##session', sess);
 })
 
 // session confirm
